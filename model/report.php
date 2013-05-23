@@ -178,7 +178,15 @@ function get_file_contents($id, $f, $start = false, $limit = false)
 function add_file($id, $c, $tmpname)
 {
 	global $pdo;
-
+	
+	chmod($tmpname, 0777);
+	echo "<pre>";
+	echo system("ls -l /tmp");
+	echo "</pre>\n";
+	
+	//$new_file = "/var/www/gffreports/" . $tmpname;
+	//move_uploaded_file($tempname, $new_file);
+	
 	// auto-convert from UTF-16 to UTF-8
 	if (substr($c, 0, 2) == "\xff\xfe") $c = iconv("utf16", "utf8", $c);
 
@@ -224,6 +232,8 @@ function add_file($id, $c, $tmpname)
 		$t = "campaign";
 	} else if (preg_match("/Audiences report/i", $sum)) {
 		$t = "audiences";
+	} else if (preg_match("/Ad group report/i", $sum)) {
+		$t = "ad_group";
 	} else {
 		add_message("Unknown file summary \"$sum\"");
 		return;
@@ -267,7 +277,8 @@ function add_file($id, $c, $tmpname)
 	}
 
 	try {
-		$sql = "load data local infile '$tmpname' into table `$mt` character set utf8 " .
+		//removed the local setting from the sql query
+		$sql = "load data infile '$tmpname' into table `$mt` character set utf8 " .
 			"fields terminated by '\\t' optionally enclosed by '\\\"' lines terminated by '\\n' " .
 			"( " . implode(",", $fl) . " )";
 		$pdo->exec($sql);

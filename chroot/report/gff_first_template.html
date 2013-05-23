@@ -49,7 +49,7 @@
 {**---------------reuseable variables---------------**}
 	{$subhundred = array( 4, 10, 20, 30, 40, 50 )}
 	{$subthousand = array( 100, 200, 300, 400, 500, 600, 700, 800, 900 )}
-	{$subtenthousand = array( 1000, 2000, 5000 )}
+	{$subtenthousand = array( 1000, 2000, 3000, 4000, 5000 )}
 	{$subhundredthousand = array( 10000, 20000, 50000 )}
 	{$submillion = array( 100000, 200000, 500000, 1000000 )}
 	{$overmillion = array( 5000000, 10000000, 15000000, 20000000, 25000000, 50000000, 100000000 )}
@@ -90,71 +90,63 @@
 {**--------------------Total Ad Spend-------------------**}
 	{$totaladspend           = sprintf("%0.2f", $totalspend)}
 {**--------------------Total Revenue--------------------**}
-	{$ads_rev                = sum($ads, "Total conv. value")}
-	{$keyword_rev            = sum($keyword, "Total conv. value")}
-	{$auto_placements_rev    = sum($auto_placements, "Total conv. value")}
-	{$man_placements_rev     = sum($man_placements, "Total conv. value")}
-	{$remark_rev             = sum($audiences, "Total conv. value")}
-	{$totalrev               = sum($hourly, "Total conv. value")}
-
-	{if $totalrev != 0}{$totalrevenue = sprintf("%0.2f", $totalrev)}
-	{else}{$totalrevenue = sprintf("%0.2f", 0)}
-	{/if}
-{**--------------------Adgroup names--------------------**}
-	{$adgroup_test = " "}
-	{$adgroup_campaign_test = " "}
-	{$adgroup_names = array()}
-	{$adgroup_campaign = array()}
-	{$keyword_count_per_adgroup = array()}
-	{$ctr_sum_per_adgroup = array()}
-	{$avg_ctr_of_adgroups = array()}
-	{$avg_adgroup_ctr = 0}
-	{$i = 0}
-
-	{foreach from=$keyword["all"] item=row}
-	{if $row["Ad group"] == $adgroup_test}
-		{if $adgroup_campaign_test  == $row["Campaign"]}
-		{else}
-			{$adgroup_campaign[$i] = $row["Campaign"]}
-			{$adgroup_names[$i] = $row["Ad group"]}
-			{$adgroup_test = $row["Ad group"]}
-			{$adgroup_campaign_test = $row["Campaign"]}
-			{$i = $i + 1}
+	{**{$j = 0}
+	{foreach from=$keyword item=row}
+		{$row["Total conv. value"]}
+		{if $row["Total conv. value"] > 0}
+			{$row["Total conv. value"]}
+			{$j = 1}
+			{break}
 		{/if}
-	{else}
-		{$adgroup_campaign[$i] = $row["Campaign"]}
-		{$adgroup_names[$i] = $row["Ad group"]}
-		{$adgroup_test = $row["Ad group"]}
-		{$adgroup_campaign_test = $row["Campaign"]}
-		{$i = $i + 1}
-	{/if}
 	{/foreach}
-	{$num_of_adgroups = count($adgroup_names)}
-{**----------------campaign network array----------------**}
-	{$campaign_network = array()}
-	{foreach from=$keyword["all"] item=row}
-		{$campaign_network[$row["Campaign"]] = "No Data"}
-	{/foreach}
-	{foreach from=$hourly["all"] item=row}
-		{$campaign_network[$row["Campaign"]] = $row["Network (with search partners)"]}
-	{/foreach}
-{**----------------adgroup network array------- ---------**}
-	{$campaign_of_adgroup = array()}
-	
-	{foreach from=$keyword["all"] item=row}
-	{if $row["Ad group"] == $adgroup_test}
-		{if $adgroup_campaign_test  == $row["Campaign"]}
-		{else}
-			{$campaign_of_adgroup[$row["Ad group"]] = $row["Campaign"]}
-			{$adgroup_test = $row["Ad group"]}
-			{$adgroup_campaign_test = $row["Campaign"]}
+	{if j == 1}**}
+		{$ads_rev                = sum($ads, "Total conv. value")}
+		{$keyword_rev            = sum($keyword, "Total conv. value")}
+		{$auto_placements_rev    = sum($auto_placements, "Total conv. value")}
+		{$man_placements_rev     = sum($man_placements, "Total conv. value")}
+		{$remark_rev             = sum($audiences, "Total conv. value")}
+		{$totalrev               = sum($hourly, "Total conv. value")}
+
+		{if $totalrev != 0}{$totalrevenue = sprintf("%0.2f", $totalrev)}
+			{else}{$totalrevenue = sprintf("%0.2f", 0)}
 		{/if}
-	{else}
-		{$campaign_of_adgroup[$row["Ad group"]] = $row["Campaign"]}
-		{$adgroup_test = $row["Ad group"]}
-		{$adgroup_campaign_test = $row["Campaign"]}
-	{/if}
+		{**{else}
+		{$ads_rev                = 0}
+		{$keyword_rev            = 0}
+		{$auto_placements_rev    = 0}
+		{$man_placements_rev     = 0}
+		{$remark_rev             = 0}
+		{$totalrev               = 0}
+	{/if}**}
+{**--------------campaign arrays by type----------------**}
+	{$display_campaigns = array()}
+	{$search_campaigns = array()}
+	{$mixed_campaigns = array()}
+
+	{foreach from=$campaign["all"] key=k item=row}
+		{$search = $row["Search Impr. share"]}
+		{$display = $row["Content Impr. share"]}
+		{$campaign_name = $row["Campaign"]}
+
+		{if $search|stristr:"--"}
+			{if $display|stristr:"--"}
+				{continue}
+			{/if}
+			{$display_campaigns[$k] = $campaign_name}
+		{/if}
+		{if $display|stristr:"--"}
+			{if $search|stristr:"--"}
+				{continue}
+			{/if}
+			{$search_campaigns[$k] = $campaign_name}
+		{/if}
+		{if !$display|stristr:"--"}
+			{if !$search|stristr:"--"}
+				{$mixed_campaigns[$k] = $campaign_name}
+			{/if}
+		{/if}
 	{/foreach}
+
 
 	<header></header>
 	
@@ -259,98 +251,234 @@
 					{/if}
 				</tr>
 			</table>
-
+{** Prints out tables by campaign type: Search, Display, Remarketing, and PLA **}
 			<table border="0" cellspacing="0" cellpadding="0"><tbody>
 				{$arr = array()}
 				{$arr.keyword         = "Search"}
 				{if ($auto_placements_spend + $man_placements_spend) > 0}
-				{$arr.auto_placements = "Display"}
-				{$arr.man_placements  = "Remarketing"}
+					{$arr.auto_placements = "Display"}
+				{/if}
+				{if isset($mixed_campaigns[1])}
+					{$arr.mixed = "Mixed"}
 				{/if}
 				{foreach from=$arr key=k item=h}
 					<tr><th colspan="7">
-					{if $h == "Display"}Display Ads{else}{$h}{/if}
+					{if $h == "Display"}Display{else}{$h}{/if}
 						</th></tr>
 					<tr><th>
 						Total Spend 
 					</th><th>
 						% of Total
-					</th>{**<th>
-						# Campaigns
 					</th><th>
+						Active<br/>Campaigns
+					</th>{**<th>
 						# Adgroups
 					</th>**}<th>
 						Ave CTR
 					</th><th>
 						CPA
-					</th>{if ${$k}_rev > 0}<th>
-						{$h} Revenue
+					</th><th>
+						{$h}<br/>Revenue
 					</th><th>
 						% of Total
 					</th><th>
-						{$h} ROAS
-					</th>{/if}</tr>
+						{$h}<br/>ROAS
+					</th></tr>
 					<tr><td>
 						<!--Total Spend-->
-						${sprintf("%0.2f", ${$k}_spend)}
+						{if $h == "Search"}
+							{$total = 0}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$search_campaigns item=c}
+									{if $row["Campaign"] == $c}
+										{$total = $total + $row["Cost"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							${sprintf("%0.2f", $total)}
+						{elseif $h == "Display"}
+							{$total = 0}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$display_campaigns item=c}
+									{if $row["Campaign"] == $c}
+										{$total = $total + $row["Cost"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							${sprintf("%0.2f", $total)}
+						{elseif $h == "Mixed"}
+							{$total = 0}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$mixed_campaigns item=c}
+									{if $row["Campaign"] == $c}
+										{$total = $total + $row["Cost"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							${sprintf("%0.2f", $total)}
+						{/if}
 					</td><td>
 						{** % of Total : $totalspend was calculated up above **}
-						{if $totalspend != 0}{sprintf("%0.2f", ${$k}_spend/$totalspend*100)}%{/if}
-					</td>{**<td>
+						{if $totalspend != 0}
+							{if $total != 0}
+								{sprintf("%0.2f", $total/$totalspend*100)}%
+							{/if}
+						{/if}
+					</td><td>
 						<!--# Campaigns-->
-						{$search_count_campaigns = 0}
-						{$display_count_campaigns = 0}
 						{if $h == "Search"}
-							{foreach from=$campaign_network item=n}
-								{if $n == "Google search"}
-									{$search_count_campaigns = $search_count_campaigns + 1}
-								{/if}
-							{/foreach}
-							{$search_count_campaigns}
-						{else}
-							{foreach from=$campaign_network item=n}
-								{if $n == "Display Network"}
-									{$display_count_campaigns = $display_count_campaigns + 1}
-								{/if}
-							{/foreach}
-							{$display_count_campaigns}
+							{count($search_campaigns)}
+						{elseif $h == "Display"}
+							{count($display_campaigns)}
+						{elseif $h == "Mixed"}
+							{count($mixed_campaigns)}
 						{/if}
-					</td>**}{**<td>
+					</td>{**<td>
 						<!--# Adgroups-->
-						{$search_count_adgroups = 0}
-						{$display_count_adgroups = 0}
-						{if $h == "Search"}
-							{foreach from=$adgroup_network item=n}
-								{if $n == "Google search"}
-									{$search_count_adgroups = $search_count_adgroups + 1}
-								{/if}
-							{/foreach}
-							{$search_count_campaigns}
-						{else}
-							{foreach from=$adgroup_network item=n}
-								{if $n == "Display Network"}
-									{$display_count_adgroups = $display_count_adgroups + 1}
-								{/if}
-							{/foreach}
-							{$display_count_campaigns}
-						{/if}
 					</td>**}<td>
 						<!--Ave CTR-->
-						{sprintf("%0.2f", (${$k}_clicks / ${$k}_impr)*100)}%
+						{** Calculates an acurate weighted CTR **}
+						{if $h == "Search"}
+							{$ctrs = array()}
+							{$imprs = array()}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$search_campaigns key=k item=c}
+									{if $row["Campaign"] == $c}
+										{$ctrs[$k] = $row["Clicks"] / $row["Impressions"]}
+										{$imprs[$k] = $row["Impressions"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							{$sumproduct = 0}
+							{$sumimpr = 0}
+							{foreach from=$imprs key=k item=impr}
+								{$sumproduct = $sumproduct + ($impr * $ctrs[$k])}
+								{$sumimpr = $sumimpr + $impr}
+							{/foreach}
+							{$weighted_ctr = $sumproduct / $sumimpr}
+							{sprintf("%0.2f", $weighted_ctr*100)}%
+						{elseif $h == "Display"}
+							{$ctrs = array()}
+							{$imprs = array()}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$display_campaigns key=k item=c}
+									{if $row["Campaign"] == $c}
+										{$ctrs[$k] = $row["Clicks"] / $row["Impressions"]}
+										{$imprs[$k] = $row["Impressions"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							{$sumproduct = 0}
+							{$sumimpr = 0}
+							{foreach from=$imprs key=k item=impr}
+								{$sumproduct = $sumproduct + ($impr * $ctrs[$k])}
+								{$sumimpr = $sumimpr + $impr}
+							{/foreach}
+							{$weighted_ctr = $sumproduct / $sumimpr}
+							{sprintf("%0.2f", $weighted_ctr*100)}%
+						{elseif $h == "Mixed"}
+							{$ctrs = array()}
+							{$imprs = array()}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$mixed_campaigns key=k item=c}
+									{if $row["Campaign"] == $c}
+										{$ctrs[$k] = $row["Clicks"] / $row["Impressions"]}
+										{$imprs[$k] = $row["Impressions"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							{$sumproduct = 0}
+							{$sumimpr = 0}
+							{foreach from=$imprs key=k item=impr}
+								{$sumproduct = $sumproduct + ($impr * $ctrs[$k])}
+								{$sumimpr = $sumimpr + $impr}
+							{/foreach}
+							{$weighted_ctr = $sumproduct / $sumimpr}
+							{sprintf("%0.2f", $weighted_ctr*100)}%
+						{/if}
 					</td><td>
 						<!--CPA-->
-						{if ${$k}_conv != 0}${sprintf("%0.2f", ${$k}_spend / ${$k}_conv)}{else}0 conv. spend = ${sprintf("%0.2f", ${$k}_spend)}.{/if}
-					</td>{if ${$k}_rev > 0}<td>
-						<!--{$h} Revenue-->
-						${sprintf("%0.2f", ${$k}_rev)}
+						{if $h == "Search"}
+							{$total_num_conv = 0}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$search_campaigns item=c}
+									{if $row["Campaign"] == $c}
+										{$total_num_conv = $total_num_conv + $row["Conv. (1-per-click)"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							${sprintf("%0.2f", $total / $total_num_conv)}
+						{elseif $h == "Display"}
+							{$totalvalue = 0}
+							{$total_num_conv = 0}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$display_campaigns item=c}
+									{if $row["Campaign"] == $c}
+										{$total_num_conv = $total_num_conv + $row["Conv. (1-per-click)"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							${sprintf("%0.2f", $total / $total_num_conv)}
+						{elseif $h == "Mixed"}
+							{$totalvalue = 0}
+							{$total_num_conv = 0}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$mixed_campaigns item=c}
+									{if $row["Campaign"] == $c}
+										{$total_num_conv = $total_num_conv + $row["Conv. (1-per-click)"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							${sprintf("%0.2f", $total / $total_num_conv)}
+						{/if}
+					</td><td>
+						<!--Revenue-->
+						{if $h == "Search"}
+							{$totalvalue = 0}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$search_campaigns item=c}
+									{if $row["Campaign"] == $c}
+										{$totalvalue = $totalvalue + $row["Total conv. value"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							${sprintf("%0.2f", $totalvalue)}
+						{elseif $h == "Display"}
+							{$totalvalue = 0}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$display_campaigns item=c}
+									{if $row["Campaign"] == $c}
+										{$totalvalue = $totalvalue + $row["Total conv. value"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							${sprintf("%0.2f", $totalvalue)}
+						{elseif $h == "Mixed"}
+							{$totalvalue = 0}
+							{foreach from=$campaign["all"] key=k item=row}
+								{foreach from=$mixed_campaigns item=c}
+									{if $row["Campaign"] == $c}
+										{$totalvalue = $totalvalue + $row["Total conv. value"]}
+									{/if}
+								{/foreach}
+							{/foreach}
+							${sprintf("%0.2f", $totalvalue)}
+						{/if}
 					</td><td>
 						{** % of Total : $totalrev was calculated up above **}
-						{if $totalrev != 0}{sprintf("%0.2f", ${$k}_rev/$totalrev*100)}%
-						{else}(None){/if}
+						{if $totalvalue != 0}
+							{if $totalrev != 0}
+								{sprintf("%0.2f", ($totalvalue / $totalrev)*100)}%
+							{/if}
+						{/if}
 					</td><td>
 						<!--{$h} ROAS-->
-						{sprintf("%0.2f", ${$k}_rev/${$k}_spend)}
-					</td>{/if}</tr>
+						{if $totalvalue != 0}
+							{if $total != 0}
+								{sprintf("%0.2f", $totalvalue/$total)}
+							{/if}
+						{/if}
+					</td></tr>
 				{/foreach}
 			</tbody></table>
 		</div>
@@ -519,7 +647,7 @@
 {$avgcpaperhour = array()}
 {for $hournum=0 to 23}
 	{$data = $pivot[$hournum]}
-	{$hourlycpa = sum($data, "Conv. (1-per-click)")/sum($data, "Clicks")*100}
+	{$hourlycpa = (sum($data, "Cost") / sum($data, "Conv. (1-per-click)")) }
 	{$avgcpaperhour[$hournum] = sprintf("%0.2f", $hourlycpa)}
 {/for}
 
@@ -628,7 +756,13 @@
 		{$barheight = $hourcpa/$sumofstat*100}
 		<div class="bar" title="{$hourcpa}" style="float: left;height: {sprintf('%0.0f', $barheight)}%;top: {100-(sprintf('%0.0f', $barheight))}%;width:3.1%;margin-left: .8%;">
 			{if $barheight > 8}
-				<span class="barLabels" style="margin-left: 0;">{$hourcpa}</span>
+				<span class="barLabels" style="margin-left: 0;">
+					{if $hourcpa|count_characters > 4}
+						{sprintf("%0.0f", $hourcpa)}
+					{else}
+						{$hourcpa}
+					{/if}
+				</span>
 			{/if}
 		</div>
 	{/foreach}
@@ -652,6 +786,8 @@
 
 {** ###End Hour of Day Graph for CPA### **}
 
+
+
 {** Hour of Day Graph for ROAS **}
 {** ROAS needed to be calulated before the graph code is run **}
 
@@ -661,7 +797,7 @@
 {$avgroasperhour = array()}
 {for $hournum=0 to 23}
 	{$data = $pivot[$hournum]}
-	{$hourlyroas = sum($data, "Total conv. value")/sum($data, "Cost")*100}
+	{$hourlyroas =  sum($data, "Total conv. value") / sum($data, "Cost")}
 	{$avgroasperhour[$hournum] = sprintf("%0.2f", $hourlyroas)}
 {/for}
 
@@ -770,7 +906,13 @@
 		{$barheight = $hourroas/$sumofstat*100}
 		<div class="bar" title="${$hourroas}" style="float: left;height: {sprintf('%0.0f', $barheight)}%;top: {100-(sprintf('%0.0f', $barheight))}%;width:3.1%;margin-left: .8%;">
 			{if $barheight > 8}
-				<span class="barLabels" style="margin-left: 0;">{$hourroas}</span>
+				<span class="barLabels" style="margin-left: 0;">
+					{if $hourroas|count_characters > 4}
+						{sprintf("%0.0f", $hourroas)}
+					{else}
+						{$hourroas}
+					{/if}
+				</span>
 			{/if}
 		</div>
 	{/foreach}
@@ -956,7 +1098,7 @@
 {$avgcpaperday = array()}
 {foreach from=$daysofweek key=k item=day}
 	{$data = $pivot[$day]}
-	{$dailycpa = sum($data, "Conv. (1-per-click)")/sum($data, "Clicks")*100}
+	{$dailycpa = sum($data, "Cost") / sum($data, "Conv. (1-per-click)")}
 	{$avgcpaperday[$k] = sprintf("%0.2f", $dailycpa)}
 {/foreach}
 
@@ -1100,7 +1242,7 @@
 {$avgroasperday = array()}
 {foreach from=$daysofweek key=k item=day}
 	{$data = $pivot[$day]}
-	{$dailyroas = sum($data, "Total conv. value")/sum($data, "Cost")*100}
+	{$dailyroas =  sum($data, "Total conv. value") / sum($data, "Cost")}
 	{$avgroasperday[$k] = sprintf("%0.2f", $dailyroas)}
 {/foreach}
 
@@ -1210,7 +1352,7 @@
 		{$barheight = $day/$sumofstat*100}
 		<div class="bar" title="${$day}" style="float: left;height: {sprintf('%0.0f', $barheight)}%;top: {100-(sprintf('%0.0f', $barheight))}%;width:13%;margin-left: .8%;">
 			{if $barheight > 9}
-				<span class="barLabels" style="">${$day}</span>
+				<span class="barLabels" style="">{$day}</span>
 			{/if}
 		</div>
 	{/foreach}
@@ -1262,11 +1404,11 @@
 		<th>Conv.</th>
 	</tr>
 	{foreach from=$pivot key=kw item=data}
-	{if sum($data, "Conv. (1-per-click)") > 0}
-	<tr valign="middle" style="font-size: 12px;"><td><span>{$kw}</span></td><td><p>{sum($data, "Impressions")}</p></td><td><p>{sum($data, "Clicks")}</p></td><td><p>{sprintf("%0.2f", sum($data, "Cost"))}</p></td><td><p>{sum($data, "Conv. (1-per-click)")}</p></td></tr>
-	{$total_top_kw_convs = $total_top_kw_convs + sum($data, "Conv. (1-per-click)")}
-	{if $data@index > 20}{break}{/if}
-	{/if}
+		{if sum($data, "Conv. (1-per-click)") > 0}
+			<tr valign="middle" style="font-size: 12px;"><td><span>{$kw|truncate:40:"...":true}</span></td><td><p>{sum($data, "Impressions")}</p></td><td><p>{sum($data, "Clicks")}</p></td><td><p>{sprintf("%0.2f", sum($data, "Cost"))}</p></td><td><p>{sum($data, "Conv. (1-per-click)")}</p></td></tr>
+			{$total_top_kw_convs = $total_top_kw_convs + sum($data, "Conv. (1-per-click)")}
+			{if $data@index > 20}{break}{/if}
+		{/if}
 	{/foreach}
 	<tr>
 		<th colspan="4" style="background: #00a9b9;color: #fff;height: 25px;">Total Conv. of Top Keywords</th>
@@ -1296,7 +1438,7 @@
 	{foreach from=$pivot key=kw item=data}
 		{if sum($data, "Cost") > 0}
 			{if sum($data, "Conv. (1-per-click)") == 0}
-				<tr valign="middle" style="font-size: 12px;"><td><span>{$kw}</span></td><td><p>	{sum($data, "Impressions")}</p></td><td><p>{sum($data, "Clicks")}</p></td><td><p>{sprintf("%0.2f", sum($data, "Cost"))}</p></td></tr>
+				<tr valign="middle" style="font-size: 12px;"><td><span>{$kw|truncate:40:"...":true}</span></td><td><p>	{sum($data, "Impressions")}</p></td><td><p>{sum($data, "Clicks")}</p></td><td><p>{sprintf("%0.2f", sum($data, "Cost"))}</p></td></tr>
 				{$total_top_no_conv_kw_spend = $total_top_no_conv_kw_spend + sprintf("%0.2f", sum($data, "Cost"))}
 				{$i = $i + 1}
 				{if $i > 21}{break}{/if}
@@ -1480,22 +1622,21 @@
 
 	{$keyword_eligible_count = 0}
 	{$keyword_no_impr_count = 0}
+	{$keyword_no_impr_no_clicks_count = 0}
 	{foreach from=$keyword.all key=i item=row}
 		{if $row["Status"] == "eligible"}
 			{$keyword_eligible_count = $keyword_eligible_count + 1}
 			{if $row["Impressions"] == 0}
 				{$keyword_no_impr_count = $keyword_no_impr_count + 1}
 			{/if}
+			{if $row["Clicks"] == 0}
+				{if $row["Impressions"] != 0}
+					{$keyword_no_impr_no_clicks_count = $keyword_no_impr_no_clicks_count + 1}
+				{/if}
+			{/if}
 		{/if}
 	{/foreach}
-	{$adgroup_count = 0}
-	{$lastadgroup = " "}
-	{foreach from=$keyword.all key=i item=row}
-		{if $row["Ad group"] !== $lastadgroup}
-			{$adgroup_count = $adgroup_count + 1}
-			{$lastadgroup = $row["Ad group"]}
-		{/if}
-	{/foreach}
+	
 	{$keyword_eligble_with_impr = $keyword_eligible_count - $keyword_no_impr_count}
 
 <div class="statsTable">
@@ -1504,21 +1645,24 @@
 		<th colspan="4">Eligible Keywords</th>
 	</tr>
 	<tr>
-		<th>Total Number of Eligible Keywords</th>
-		<th>0 Impression Eligible Keywords</th>
-		<th>Keywords with Impressions</th>
-		{**<th>Average # of KWs per Adgroup</th>**}
+		<th>Total Number<br/>of Eligible Keywords</th>
+		<th>Keywords<br/>with Impressions</th>
+		<th>Keywords with<br/>Impressions - 0 Clicks</th>
+		<th>0 Impression<br/>Eligible Keywords</th>
+		<th>Average # of Eligible<br/>KWs per Adgroup</th>
 	</tr>
 	<tr>
 		<td>
 			{$keyword_eligible_count}
 		</td><td>
+			{$keyword_eligble_with_impr}
+		</td><td>
+			{$keyword_no_impr_no_clicks_count}
+		</td><td>
 			{$keyword_no_impr_count}
 		</td><td>
-			{$keyword_eligble_with_impr}
-		</td>{**<td>
-			{sprintf("%0.2f", count($keyword["all"]) / ($adgroup_count + 1))}
-		</td>**}
+			{sprintf("%0.1f", $keyword_eligible_count / count($ad_group["all"]) )}
+		</td>
 	</tr>
 </tbody></table>
 </div>
@@ -1537,10 +1681,10 @@
 		<th colspan="4">Converting Keywords</th>
 	</tr>
 	<tr>
-		<th>Converting Keywords</th>
-		<th>Non-Converting Keywords with Impressions</th>
-		<th>% of Eligible Keywords that Convert</th>
-		<th>ROI per Impression</th>
+		<th>Converting<br/>Keywords</th>
+		<th>Non-Converting Keywords<br/>with Impressions</th>
+		<th>% of Eligible Keywords<br/>that Convert</th>
+		<th>Rev per Impression<br/>(search campaigns)</th>{** search only **}
 	</tr>
 	<tr>
 		<td>
@@ -1550,11 +1694,17 @@
 		</td><td>
 			{sprintf("%0.2f", ($keyword_converting_count/$keyword_eligible_count)*100)}%
 		</td><td>
-			{if $totalrev == 0}
-				No Revenue Recorded
-			{else}
-				${sprintf("%0.2f", ($totalrev-$totalspend)/$totalimpr)}
-			{/if}
+			{$totalvalue = 0}
+			{$search_impr = 0}
+			{foreach from=$campaign["all"] key=k item=row}
+				{foreach from=$search_campaigns item=c}
+					{if $row["Campaign"] == $c}
+						{$totalvalue = $totalvalue + $row["Total conv. value"]}
+						{$search_impr = $search_impr + $row["Impressions"]}
+					{/if}
+				{/foreach}
+			{/foreach}
+			${sprintf("%0.2f", ($totalvalue / $search_impr))}
 		</td>
 	</tr>
 </tbody></table>
@@ -1572,6 +1722,8 @@
 		<th>Ave. Conversion Rate</th>
 		<th>Ave. CTR</th>
 		<th>Conversions</th>
+		<th>Revenue per<br/>Conversion</th>
+		<th>ROI</th>
 	</tr>
 	{foreach from=$pivot key=matchtype item=matches}
 		<tr><td><span>{$matchtype}</span></td>
@@ -1580,6 +1732,7 @@
 			{$conv = sum($matches, "Conv. (1-per-click)")}
 			{$clicks = sum($matches, "Clicks")}
 			{$impr = sum($matches, "Impressions")}
+			{$rev = sum($matches, "Total conv. value")}
 			{if $conv != 0}
 				<p>${sprintf("%0.2f", $spend/$conv)}</p>
 			{else}
@@ -1588,7 +1741,9 @@
 		</td>
 		<td><p>{sprintf("%0.2f", $conv/$clicks*100)}%</p></td>
 		<td><p>{sprintf("%0.2f", sum($matches, "Clicks")/$impr*100)}%</p></td>
-		<td><p>{sprintf("%0.2f", $conv)}</p></td>
+		<td><p>{sprintf("%0.0f", $conv)}</p></td>
+		<td><p>{sprintf("%0.2f", $rev / $conv)}</p></td>
+		<td><p>{sprintf("%0.2f", $rev / $spend)}</p></td>
 		</tr>
 	{/foreach}
 </tbody></table>
@@ -1740,6 +1895,7 @@
 </div>
 <div class="graph2">
 <table border="0" cellspacing="0" cellpadding="0">
+	{** There is something wrong here redo **}
 <tr>
 <td></td>
 {foreach from=$hist key=qs item=qs_score}
@@ -1870,11 +2026,17 @@
 </tr>
 
 <div class="graphBars">
-	{for $qs = 1 to 10}
-		{if isset($pivot[$qs])}
-			{$data = $pivot[$qs]}
+	{for $i = 1 to 10}
+	{foreach from=$pivot key=qs item=row}
+		{if $i != 0}
+			{if isset($pivot[$i])}
+				{$data = $pivot[$i]}
+				{$qs_cost = sum($data, $graphstat)}
+			{else}	
+				{$qs_cost = 0}
+			{/if}
 		{/if}
-		{$qs_cost = sum($data, $graphstat)}
+	{/foreach}
 		{$barheight = sprintf('%0.0f', $qs_cost)/$sumofstat*100}
 		<div class="bar" title="${sprintf('%0.2f', $qs_cost)}" style="float: left;height: {sprintf('%0.0f', $barheight)}%;top: {100-(sprintf('%0.0f', $barheight))}%;width:8.9%;margin-left: .8%;">
 			{if $barheight > 8}
@@ -1903,31 +2065,29 @@
 
 {**  CPA by Quality Scores **}
 
-{$sum_numerator = 0}
-{$sum_denominator = 0}
-{$weighted_cpa_by_qs = array()}
+{$pivot = pivottable($keyword, "Quality score")}
+
+{$qs_cpa = array()}
 
 {for $qs = 1 to 10}
-	{foreach from=$keyword["all"] item=row}
-		{if $row["Quality score"] == $qs}
-			{$sum_numerator = $sum_numerator + ($row["Conv. (1-per-click)"]*$row["Cost / conv. (1-per-click)"])}
-			{$sum_denominator = $sum_denominator + $row["Conv. (1-per-click)"]}
+	{if isset($pivot[$qs])}
+		{$data = $pivot[$qs]}
+		{$qs_conv = sum($data, "Conv. (1-per-click)")}
+		{if $qs_conv != 0}
+			{$qs_cpa[$qs] =  sum($data, "Cost") / $qs_conv}
+		{else}
+			{$qs_cpa[$qs] =  0}
 		{/if}
-	{/foreach}
-	{if $sum_denominator > 0}
-		{$weighted_cpa_by_qs[$qs] = $sum_numerator/$sum_denominator}
 	{else}
-		{$weighted_cpa_by_qs[$qs] = 0}
+		{$qs_cpa[$qs] =  0}
 	{/if}
-	{$sum_numerator = 0}
-	{$sum_denominator = 0}
 {/for}
 
 <div class="graph"><!--Start Graph Day of Week-->
 <div class="graph1">
 	{$highpoint = 0}
 	{for $qs = 1 to 10}
-		{$datapoint = $weighted_cpa_by_qs[$qs]}
+		{$datapoint = $qs_cpa[$qs]}
 		{if $datapoint > $highpoint}
 			{$highpoint = $datapoint}
 		{/if}
@@ -2024,14 +2184,14 @@
 </tr>
 
 <div class="graphBars">
-	{for $qs = 1 to 10}
-		{$barheight = sprintf('%0.0f', $weighted_cpa_by_qs[$qs])/$sumofstat*100}
-		<div class="bar" title="${sprintf('%0.2f', $qs_cost)}" style="float: left;height: {sprintf('%0.0f', $barheight)}%;top: {100-(sprintf('%0.0f', $barheight))}%;width:8.9%;margin-left: .8%;">
+	{foreach from=$qs_cpa key=qs item=cpa}
+		{$barheight = sprintf('%0.0f', $qs_cpa[$qs])/$sumofstat*100}
+		<div class="bar" title="${sprintf('%0.2f', $qs_cpa)}" style="float: left;height: {sprintf('%0.0f', $barheight)}%;top: {100-(sprintf('%0.0f', $barheight))}%;width:8.9%;margin-left: .8%;">
 			{if $barheight > 8}
-				<span class="barLabels" style="">${sprintf('%0.2f', $weighted_cpa_by_qs[$qs])}</span>
+				<span class="barLabels" style="">${sprintf('%0.2f', $cpa)}</span>
 			{/if}
 		</div>
-	{/for}
+	{/foreach}
 </div>
 
 </table>
@@ -2060,7 +2220,7 @@
 <div class="content" id="slideNum11">
 <div class="left"></div>
 <div class="right">
-<h2>Ad Review</h2>
+<h2>Ad Review</h2>{** Redo with only search data **}
 
 {$overall_avg_position = 0}
 {foreach from=$ads["all"] item=row}
@@ -2071,30 +2231,60 @@
 {/foreach}
 
 {**
-{foreach from=$adgroup_names item=adgroup}
-	{$keyword_count_per_adgroup[$adgroup] = 0}
-	{$ctr_sum_per_adgroup[$adgroup] = 0}
-	{$avg_ctr_of_adgroups[$adgroup] = 0}
-{/foreach}
-
-{foreach from=$adgroup_names key=k item=adgroup}
-	{foreach from=$keyword["all"] item=row}
-		{if $adgroup == $row["Ad group"]}
-			{if $adgroup_campaign[$k] == $row["Campaign"]}
-				{$keyword_count_per_adgroup[$adgroup] = $keyword_count_per_adgroup[$adgroup] + 1}
-				{$ctr_sum_per_adgroup[$adgroup] = $ctr_sum_per_adgroup[$adgroup] + $row["CTR"]}
-				{$avg_ctr_of_adgroups[$adgroup] = $ctr_sum_per_adgroup[$adgroup] / $keyword_count_per_adgroup[$adgroup]}
-			{/if}
+{$ctrs = array()}
+{$imprs = array()}
+{foreach from=$campaign["all"] key=k item=row}
+	{foreach from=$search_campaigns key=k item=c}
+		{if $row["Campaign"] == $c}
+			{$ctrs[$k] = $row["Clicks"] / $row["Impressions"]}
+			{$imprs[$k] = $row["Impressions"]}
 		{/if}
 	{/foreach}
 {/foreach}
-
-{foreach $avg_ctr_of_adgroups as $n}
-	{$avg_adgroup_ctr = $avg_adgroup_ctr + $n}
+{$sumproduct = 0}
+{$sumimpr = 0}
+{foreach from=$imprs key=k item=impr}
+	{$sumproduct = $sumproduct + ($impr * $ctrs[$k])}
+	{$sumimpr = $sumimpr + $impr}
 {/foreach}
-
-{$avg_adgroup_ctr = $avg_adgroup_ctr / count($adgroup_names)}
+{$weighted_ctr = $sumproduct / $sumimpr}
+{sprintf("%0.2f", $weighted_ctr*100)}%
 **}
+{** Calculate Weighted Average Position based on keywords **}
+
+{$avg_pos = array()}
+{$imprs = array()}
+{foreach from=$keyword["all"] key=k item=row}
+	{$avg_pos[$k] = $row["Avg. position"]}
+	{$imprs[$k] = $row["Impressions"]}
+{/foreach}
+{$sumproduct = 0}
+{$sumimpr = 0}
+{foreach from=$imprs key=k item=impr}
+	{$sumproduct = $sumproduct + ($impr * $avg_pos[$k])}
+	{$sumimpr = $sumimpr + $impr}
+{/foreach}
+{$weighted_pos = $sumproduct / $sumimpr}
+
+{** Calculate Weighted CTR based on adgroups **}
+
+{$ctrs = array()}
+{$imprs = array()}
+{foreach from=$ad_group["all"] key=k item=row}
+	{if $row["Impressions"] != 0}
+		{$ctrs[$k] = $row["Clicks"] / $row["Impressions"]}
+		{$imprs[$k] = $row["Impressions"]}
+	{/if}
+{/foreach}
+{$sumproduct = 0}
+{$sumimpr = 0}
+{foreach from=$imprs key=k item=impr}
+	{$sumproduct = $sumproduct + ($impr * $ctrs[$k])}
+	{$sumimpr = $sumimpr + $impr}
+{/foreach}
+{$weighted_ctr_adgroup = $sumproduct / $sumimpr}
+
+
 <div class="statsTable">
 
 <table border="0" cellspacing="0" cellpadding="0">
@@ -2105,18 +2295,59 @@
 		<th>Average # of Ads per Adgroup</th>
 		<th>Average Ad Position</th>
 		<th>Average Adgroup CTR</th>
-		<th>Average Campaign CTR</th>
 	</tr>
 	<tr>
-		<td>{sprintf("%0.2f", count($ads["all"]) / ($adgroup_count + 1))}</td>
-		<td>{sprintf("%0.1f", $overall_avg_position/100)}</td>
-		<td>needs to be calculated</td>
-		<td>needs to be calculated</td>
+		<td>{sprintf("%0.1f", count($ads["all"]) / count($ad_group["all"]))}</td>
+		<td>{sprintf("%0.1f", $weighted_pos)}</td>
+		<td>{sprintf("%0.2f", $weighted_ctr_adgroup*100)}%</td>
 	</tr>
 </table>
 </div> 
 
+{$top_ad_score = 0}
+{foreach from=$ads["all"] item=row}
+	{if $row["Clicks"] == "0"}
+	{elseif $top_ad_score == 0}
+		{$top_ad_score = $row["Conv. (1-per-click)"] / $row["Clicks"]}
+	{else}
+		{if $row["Conv. (1-per-click)"] / $row["Clicks"] > $top_ad_score}
+			{$top_ad_score = $row["Conv. (1-per-click)"] / $row["Clicks"]}
+		{/if}
+	{/if}
+{/foreach}
 
+{foreach from=$ads["all"] item=row}
+	{if $row["Clicks"] == 0}
+		{continue}
+	{/if}
+	{if $row["Conv. (1-per-click)"] / $row["Clicks"] == $top_ad_score}
+		<div class="adtable">
+			<table border="0" cellspacing="0" cellpadding="0">
+				<tr>
+					<th colspan="4">Ad with the Best Conversion Rate</th>
+				</tr>
+				<tr>
+					<th>Ad</th>
+					<th>CTR</th>
+					<th>Conversion<br>Rate</th>
+					<th>ROI</th>
+				</tr>
+				<tr>
+					<td>
+						<p class="headline">{$row["Ad"]}</p>
+						<p class="disUrl">{$row["Display URL"]}</p>
+						<p class="desc1">{$row["Description line 1"]}</p>
+						<p class="desc2">{$row["Description line 2"]}</p>
+					</td>
+					<td>{$row["CTR"]}</td>
+					<td>{sprintf("%0.2f", $row["Clicks"] / $row["Conv. (1-per-click)"])}</td>
+					<td>{sprintf("%0.2f", $row["Total conv. value"] / $row["Cost"])}</td>
+				</tr>
+			</table>
+		</div>
+		{break}
+	{/if}
+{/foreach}
 
 </div>
 <div class="rightBottom">

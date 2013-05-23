@@ -33,7 +33,7 @@ class Smarty_Security {
      *
      * @var integer
      */
-    public $php_handling = Smarty::PHP_PASSTHRU;
+    public $php_handling = Smarty::PHP_ALLOW;
     /**
      * This is the list of template directories that are considered secure.
      * $template_dir is in this list implicitly.
@@ -75,6 +75,8 @@ class Smarty_Security {
         'in_array', 'is_array',
         'time',
         'nl2br',
+        'strstr',
+        'stristr',
     );
     /**
      * This is an array of trusted PHP modifers.
@@ -85,7 +87,9 @@ class Smarty_Security {
      */
     public $php_modifiers = array(
         'escape',
-        'count'
+        'count',
+        'strstr',
+        'stristr',
     );
     /**
      * This is an array of allowed tags.
